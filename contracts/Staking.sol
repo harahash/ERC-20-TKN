@@ -34,17 +34,36 @@ contract Staking {
             (_reward / totalDepositedAmount);
     }
 
-    function withdraw() public {
+    function withdrawAll() public {
         depositedAmount = stakeBalance[msg.sender];
-        require(depositedAmount > 0, "you have no coins to withdraw");
-        stakedReward =
-            depositedAmount *
-            (totalStakedAmount - currentTotalStakedAmount[msg.sender]);
-        withdrawAmount = stakedReward + depositedAmount;
+        require(depositedAmount > 0, "you have no tokens to withdraw");
 
-        tknToken.transfer(msg.sender, withdrawAmount);
-        totalDepositedAmount = totalDepositedAmount - depositedAmount;
-        contractBalance = address(this).balance;
-        stakeBalance[msg.sender] = 0;
+        rewardAndSend(depositedAmount, msg.sender);
+    }
+
+    function partialWithdrawal(uint256 _amount) public {
+        depositedAmount = stakeBalance[msg.sender];
+        require(depositedAmount > 0, "you have no tokens to withdraw");
+        require(
+            _amount <= depositedAmount,
+            "you cant unstake more than you staked"
+        );
+
+        rewardAndSend(_amount, msg.sender);
+    }
+
+    function rewardAndSend(uint256 _amount, address _recepient) private {
+        stakedReward =
+            _amount *
+            (totalStakedAmount - currentTotalStakedAmount[_recepient]);
+        withdrawAmount = stakedReward + _amount;
+
+        tknToken.transfer(_recepient, withdrawAmount);
+        updateBalance(_amount, _recepient);
+    }
+
+    function updateBalance(uint256 _amount, address _owner) private {
+        totalDepositedAmount = totalDepositedAmount - _amount;
+        stakeBalance[_owner] = stakeBalance[_owner] - _amount;
     }
 }

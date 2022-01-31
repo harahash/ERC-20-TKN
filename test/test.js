@@ -167,8 +167,8 @@ describe("Progect testing", function () {
 				const totalStakedAmount = await staking.totalStakedAmount();
 				expect(totalStakedAmount).to.equal(3);
 
-				await staking.connect(addr1).withdraw();
-				await staking.connect(addr2).withdraw();
+				await staking.connect(addr1).withdrawAll();
+				await staking.connect(addr2).withdrawAll();
 
 				const addr1BalanceAfterStaking = await tknToken.balanceOf(
 					addr1.address
@@ -180,6 +180,23 @@ describe("Progect testing", function () {
 				expect(addr1BalanceAfterStaking).to.equal(2000);
 				expect(addr2BalanceAfterStaking).to.equal(2400);
 				expect(await staking.totalDepositedAmount()).to.equal(0);
+			});
+
+			it("Should successfully unstake part of stake + reward", async function () {
+				await tknToken.transfer(staking.address, 1000000);
+				await tknToken.connect(addr1).approve(staking.address, 500);
+				await staking.connect(addr1).deposit(500);
+				await staking.distribute(1000);
+				await staking.connect(addr1).partialWithdrawal(250);
+
+				const balanceAfterPartialUnstake = await tknToken.balanceOf(
+					addr1.address
+				);
+				const totalDepositedAmount =
+					await staking.totalDepositedAmount();
+
+				expect(balanceAfterPartialUnstake).to.equal(2250);
+				expect(totalDepositedAmount).to.equal(250);
 			});
 		});
 	});
